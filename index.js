@@ -4,15 +4,19 @@
 class Carta {
     /**
      * Cria uma instância de uma carta com seus atributos de identificação
-     * @param {*} carta letra ou número que identifica a carta
-     * @param {*} naipe naipe que identifica a carta
-     * @param {*} valor valor da carta na pontuação
-     * @param {*} ordem ordem de potência da carta em relação as demais (considerando apenas sua identificação)
+     * @param {string} carta letra ou número que identifica a carta
+     * @param {string} naipe naipe que identifica a carta
+     * @param {number} valor valor da carta na pontuação
+     * @param {number} ordem ordem de potência da carta em relação as demais (considerando apenas sua identificação)
      */
     constructor(carta, naipe, valor, ordem) {
+        /** @type string */
         this.carta = carta;
+        /** @type string */
         this.naipe = naipe;
+        /** @type number */
         this.valor = valor;
+        /** @type number */
         this.ordem = ordem;
     }
 
@@ -21,7 +25,7 @@ class Carta {
      * @returns {string} Identificação da carta
      */
     printCarta() {
-        return `${this.carta} ${this.naipe}`;
+        return `${this.carta} de ${this.naipe}`;
     }
 }
 
@@ -34,16 +38,21 @@ class Baralho {
      * naipes para bisca (usando a classe Carta para preencher o baralho)
      */
     constructor() {
+        /** @type Carta[] */
+        this.baralho = [];
+
+        /** @type Carta */
+        this.trunfo;
+
         this.novoBaralho();
         this.embaralhar();
+        this.pegarTrunfo();
     }
 
     /**
      * Gera um novo set de cartas embaralhadas
      */
     novoBaralho() {
-        this.baralho = [];
-
         let valores = [
             { carta: "2", valor: 0 },
             { carta: "3", valor: 0 },
@@ -69,6 +78,7 @@ class Baralho {
      * Faz o embaralhamento do baralho já definido
      */
     embaralhar() {
+        /** @type Carta[] */
         let embaralhado = [];
 
         while (this.baralho.length > 0) {
@@ -80,11 +90,10 @@ class Baralho {
     }
 
     /**
-     * Retorna a instância da última carta no fundo do baralho para ser o trunfo da partida
-     * @returns {Carta} Última carta do baralho, trunfo
+     * Define o trunfo como a última carta no fundo do baralho pelo resto da partida
      */
     pegarTrunfo() {
-        return this.baralho[this.baralho.length - 1];
+        this.trunfo = this.baralho[this.baralho.length - 1];
     }
 
     /**
@@ -210,15 +219,16 @@ class Bisca {
      * @param {number} rod Numero da rodada atual
      */
     rodada(rod) {
-        console.log(`\nRodada ${rod}:`);
+        /** @type {Carta} */
+        let trunfo = this.baralho.trunfo;
+
+        console.log(`\nRodada ${rod} (trunfo: ${trunfo.printCarta()}):`);
 
         /** @type {Carta} */
         let cartaGanhador;
 
         /** @type {number} */
         let indexGanhador;
-
-        let trunfo = this.baralho.pegarTrunfo();
 
         /** @type {Carta[]} */
         let jogadas = [];
@@ -282,7 +292,7 @@ class Bisca {
         this.iniciar();
 
         let rodadas = 0;
-        while (this.baralho.cartasRestantes > 0) {
+        while (this.baralho.cartasRestantes() > 0) {
             rodadas++;
 
             this.rodada(rodadas);
@@ -303,7 +313,7 @@ class Bisca {
  * Função principal que cria e roda o jogo da bisca
  */
 function main() {
-    let bisquinha = new Bisca("Filipe", "Maja");
+    let bisquinha = new Bisca("Filipe", "Maja", "Gabriel", "Henrique");
     bisquinha.jogar();
 }
 
