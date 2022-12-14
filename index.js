@@ -203,31 +203,34 @@ class Bisca {
     }
 
     /**
-     * Adiciona 3 cartas a mão de cada jogador da partida;
+     * Reordena o vetor de jogadores para que o vencedor da
+     * última rodada seja o primeiro da próxima
+     * @param {number} indexInicial index atual do jogador vencedor da última rodada
      */
-    iniciar() {
-        for (let i = 0; i < 3; i++) {
-            this.darCartas();
+    reordenarPlayers(indexInicial) {
+        /** @type {Player[]} */
+        let novaOrdemPlayers = [];
+
+        for (let i = indexInicial; i < this.players.length + indexInicial; i++) {
+            let pegarPos = i % this.players.length;
+            let pegarPlayer = this.players[pegarPos];
+            novaOrdemPlayers.push(pegarPlayer);
         }
+
+        this.players = novaOrdemPlayers;
     }
 
     /**
-     * Todos os jogadores jogam as cartas e é definido o
-     * ganhador da rodada e os pontos que o mesmo ganhará.
-     * Ao findar, reordena o vetor de jogadores para a
-     * próxima rodada começar pelo último ganhador.
-     * @param {number} rod Numero da rodada atual
+     * Todos os jogadores usam uma carta e é definida a carta vencedora da rodada
+     * @param {Carta} trunfo Carta trunfo do baralho
+     * @returns Objeto contendo a carta vencedora, o index do jogador vencedor
+     * e o vetor com todas as Cartas jogadas na rodada
      */
-    rodada(rod) {
-        /** @type {Carta} */
-        let trunfo = this.baralho.trunfo;
-
-        console.log(`\nRodada ${rod} (trunfo: ${trunfo.printCarta()}):`);
-
+    jogarCartas(trunfo) {
         /** @type {Carta} */
         let cartaGanhador;
 
-        /** @type {number} */
+        /** @type {Carta} */
         let indexGanhador;
 
         /** @type {Carta[]} */
@@ -235,8 +238,6 @@ class Bisca {
 
         this.players.forEach((player, i) => {
             let jogada = player.usarCarta();
-
-            console.log(`${player.nome}: ${jogada.printCarta()}`);
 
             jogadas.push(jogada);
 
@@ -250,20 +251,71 @@ class Bisca {
             }
         });
 
-        let pontosRodada = jogadas.reduce((soma, { valor }) => soma + valor, 0);
+        return { cartaGanhador, indexGanhador, jogadas };
+    }
 
+    /**
+     * Itera pelo vetor de jogadores, imprime a jogada de cada um e quem foi o vencedor
+     * @param {number} indexGanhador Index do vencedor da rodada
+     * @param {Carta[]} jogadas Vetor com as Cartas jogadas na rodada
+     */
+    printJogadas(indexGanhador, jogadas) {
+        this.players.forEach((player, i) => {
+            let cartaPlayer = `${i + 1} - ${player.nome}: ${jogadas[i].printCarta()}`;
+            let vencedorPlayer = i === indexGanhador ? " (vencedor)" : "";
+
+            console.log(cartaPlayer + vencedorPlayer);
+        });
+    }
+
+    /**
+     * Retorna o total de pontos que foram jogados na rodada
+     * @param {Carta[]} jogadas Vetor com as Cartas jogadas na rodada
+     * @returns {number} Total de pontos da rodada
+     */
+    pontosRodada(jogadas) {
+        return jogadas.reduce((soma, { valor }) => soma + valor, 0);
+    }
+
+    /**
+     * Contabiliza e atribui os pontos da rodada para o jogador vencedor
+     * @param {number} indexGanhador Index do vencedor da rodada
+     * @param {Carta[]} jogadas Vetor com as Cartas jogadas na rodada
+     */
+    darPontos(indexGanhador, jogadas) {
+        let pontosRodada = this.pontosRodada(jogadas);
         this.players[indexGanhador].adicionarPontos(pontosRodada);
+    }
 
-        /** @type {Player[]} */
-        let novaOrdemPlayers = [];
-
-        for (let i = indexGanhador; i < this.players.length + indexGanhador; i++) {
-            let pegarPos = i % this.players.length;
-            let pegarPlayer = this.players[pegarPos];
-            novaOrdemPlayers.push(pegarPlayer);
+    /**
+     * Adiciona 3 cartas a mão de cada jogador da partida;
+     */
+    iniciar() {
+        for (let i = 0; i < 3; i++) {
+            this.darCartas();
         }
+    }
 
-        this.players = novaOrdemPlayers;
+    /**
+     * Chama os métodos necessários para executar a rodada completa.
+     * @description Realiza as jogadas da rodada, imprime os resultados,
+     * computa os pontos para o vencedor e reordena os jogadores
+     * conforme o vencedor da rodada
+     * @param {number} rod Numero da rodada atual
+     */
+    rodada(rod) {
+        /** @type {Carta} */
+        let trunfo = this.baralho.trunfo;
+
+        console.log(`\nRodada ${rod} (trunfo: ${trunfo.printCarta()}):`);
+
+        let resultados = this.jogarCartas(trunfo);
+
+        this.printJogadas(resultados.indexGanhador, resultados.jogadas);
+
+        this.darPontos(resultados.indexGanhador, resultados.jogadas);
+
+        this.reordenarPlayers(resultados.indexGanhador);
     }
 
     /**
@@ -282,7 +334,9 @@ class Bisca {
 
         let nomesGanhadores = ganhadores.map(({ nome }) => nome).join(" e ");
 
-        console.log(`\n\nVitória de ${nomesGanhadores}! ${pontosTime1} x ${pontosTime2}`);
+        let pontuacao = [pontosTime1, pontosTime2].sort((a, b) => (b > a ? 1 : -1)).join(" x ");
+
+        console.log(`\n\nVitória de ${nomesGanhadores}! ${pontuacao}`);
     }
 
     /**
